@@ -4,11 +4,16 @@ import (
 	data "auth-service/models"
 	"auth-service/routes"
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 
 	_ "github.com/go-sql-driver/mysql"
+)
+
+const (
+	port = 80
 )
 
 type Config struct {
@@ -41,10 +46,11 @@ func connectToDB() *sql.DB {
 
 func (app *Config) StartServer() {
 	srv := &http.Server{
-		Addr:    ":80",
+		Addr:    fmt.Sprintf(":%v", port),
 		Handler: routes.Routes(app.db),
 	}
 
+	log.Println("Starting auth service on http://localhost:80")
 	if err := srv.ListenAndServe(); err != nil {
 		log.Panic("jiji se me cayó el server")
 	}

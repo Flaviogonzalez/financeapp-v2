@@ -2,7 +2,10 @@ package event
 
 import (
 	"encoding/json"
+	"io"
 	"log"
+	"net/http"
+	"strings"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -79,8 +82,35 @@ func (consumer *Consumer) Listen(topics []string) error {
 
 func handlePayload(payload Payload) {
 	switch payload.Name {
-	// y aca dependiendo q tenga en name ejecuto X función
+	case "register":
+		handleRegistration(payload.Data)
 	}
+}
+
+func handleRegistration(data string) {
+	// Make HTTP request to auth service
+	client := &http.Client{}
+	req, err := http.NewRequest("POST", "http://auth-service:8080/register", strings.NewReader(data))
+	if err != nil {
+		log.Printf("Error creating request: %v", err)
+		return
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Error making request to auth service: %v", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Read and log the response
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("Error reading response: %v", err)
+		return
+	}
+	log.Printf("Auth service response: %s", string(body))
 }
 
 type Payload struct {
